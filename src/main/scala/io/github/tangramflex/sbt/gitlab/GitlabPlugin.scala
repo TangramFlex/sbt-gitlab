@@ -66,6 +66,16 @@ object GitlabPlugin extends AutoPlugin {
   private def groupRepo(domain: String, groupId: Int): MavenRepository =
     s"gitlab-maven-group-$groupId" at s"https://$domain/api/v4/groups/$groupId/-/packages/maven"
 
+  private val addGitlabRepoAuth = Def.task {
+    gitlabCredentialsHandler.value match {
+      case Some(creds) => gitlabResolvers.value.foldRight(csrConfiguration.value) {
+        case (repo, csr) => csr.addRepositoryAuthentication(repo.name, Authentication(Seq(creds.key -> creds.value)))
+      }
+      case None => csrConfiguration.value
+    }
+  }
+
+
   val gitLabProjectSettings : Seq[Def.Setting[_]] =
     Seq(
       publishMavenStyle := true,
@@ -99,14 +109,9 @@ object GitlabPlugin extends AutoPlugin {
       ).flatten,
       resolvers ++= gitlabResolvers.value,
       // Adds Coursier repository Authentication for each gitlabResolver
-      csrConfiguration := {
-        gitlabCredentialsHandler.value match {
-          case Some(creds) => gitlabResolvers.value.foldRight(csrConfiguration.value) {
-            case (repo, csr) => csr.addRepositoryAuthentication(repo.name, Authentication(Seq(creds.key -> creds.value)))
-          }
-          case None => csrConfiguration.value
-        }
-      },
+      csrConfiguration := addGitlabRepoAuth.value,
+      updateClassifiers / csrConfiguration := addGitlabRepoAuth.value,
+      updateSbtClassifiers / csrConfiguration := addGitlabRepoAuth.value,
       publish := publish.dependsOn(headerAuthHandler).value,
       // If no publish location is specified then publish to the project id (if set)
       // Note: The project ID should always be set automatically with a gitlab ci pipeline via the CI_PROJECT_ID
