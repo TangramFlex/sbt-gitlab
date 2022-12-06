@@ -20,10 +20,5 @@ lazy val root = (project in file("."))
   .settings(
     name := "sbt-gitlab",
     console / initialCommands := "import io.github.tangramflex.sbt.gitlab._",
-    pluginCrossBuild / sbtVersion := {
-      scalaBinaryVersion.value match {
-        case "2.12" => "1.5.0" // set minimum sbt version
-      }
-    }
   )
   
