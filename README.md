@@ -3,7 +3,7 @@
 Gitlab dependency resolution and artifact publishing for sbt
 
 ```scala
-addSbtPlugin("io.github.tangram-flex" % "sbt-gitlab" % "0.0.7") // in your project/plugins.sbt file
+addSbtPlugin("io.github.tangram-flex" % "sbt-gitlab" % "0.0.9") // in your project/plugins.sbt file
 ```
 
 
