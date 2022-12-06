@@ -1,12 +1,12 @@
 package io.github.tangramflex.sbt.gitlab
 
-import lmcoursier.CoursierConfiguration
-import lmcoursier.definitions.Authentication
+import lmcoursier.syntax._
 import org.apache.ivy.util.url.{URLHandler, URLHandlerDispatcher, URLHandlerRegistry}
 import sbt.Keys.*
 import sbt.*
 
 import scala.util.Try
+import lmcoursier.definitions.Authentication
 object GitlabPlugin extends AutoPlugin {
 
   
@@ -69,7 +69,9 @@ object GitlabPlugin extends AutoPlugin {
   private val addGitlabRepoAuth = Def.task {
     gitlabCredentialsHandler.value match {
       case Some(creds) => gitlabResolvers.value.foldRight(csrConfiguration.value) {
-        case (repo, csr) => csr.addRepositoryAuthentication(repo.name, Authentication(Seq(creds.key -> creds.value)))
+        case (repo, csr) => csr.withAuthenticationByRepositoryId(
+          Vector(repo.name -> Authentication("","").withHeaders(Seq(creds.key -> creds.value)))
+        )
       }
       case None => csrConfiguration.value
     }
