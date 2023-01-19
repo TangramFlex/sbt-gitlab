@@ -3,6 +3,7 @@ package io.github.tangramflex.sbt.gitlab
 import lmcoursier.definitions.Authentication
 import lmcoursier.CoursierConfiguration
 import org.apache.ivy.util.url.{URLHandler, URLHandlerDispatcher, URLHandlerRegistry}
+
 import sbt.Keys.*
 import sbt.*
 
@@ -10,12 +11,12 @@ import scala.util.Try
 
 object GitlabPlugin extends AutoPlugin {
 
-  
   lazy val headerAuthHandler =
     taskKey[Unit]("perform auth using header credentials")
 
   // Not sure we have any reason to expose this
-  private val gitlabResolvers = settingKey[Seq[MavenRepository]]("List of gitlab Maven repositories")
+  private val gitlabResolvers =
+    settingKey[Seq[MavenRepository]]("List of gitlab Maven repositories")
   // This plugin will load automatically
   override def trigger: PluginTrigger = allRequirements
 
@@ -32,10 +33,13 @@ object GitlabPlugin extends AutoPlugin {
   }
   import autoImport._
 
-  def gitlabUrlHandlerDispatcher(gitlabDomain: String, creds: GitlabCredentials): URLHandlerDispatcher =
+  def gitlabUrlHandlerDispatcher(
+      gitlabDomain: String,
+      creds: GitlabCredentials
+  ): URLHandlerDispatcher =
     new URLHandlerDispatcher {
       Seq("http", "https") foreach {
-        super.setDownloader(_, GitlabUrlHandler(gitlabDomain,creds))
+        super.setDownloader(_, GitlabUrlHandler(gitlabDomain, creds))
       }
       override def setDownloader(
           protocol: String,
@@ -52,7 +56,7 @@ object GitlabPlugin extends AutoPlugin {
       Credentials
         .allDirect(credentials.value.filter {
           case f: FileCredentials => f.path.exists()
-          case _ => true
+          case _                  => true
         })
         .find(_.realm == "gitlab")
         .map(GitlabCredentials.apply)
@@ -76,7 +80,7 @@ object GitlabPlugin extends AutoPlugin {
     }
   }
 
-  val gitLabProjectSettings : Seq[Def.Setting[_]] =
+  val gitLabProjectSettings: Seq[Def.Setting[_]] =
     Seq(
       publishMavenStyle := true,
       gitlabDomain := sys.env.getOrElse("CI_SERVER_HOST", "gitlab.com"),
@@ -92,7 +96,7 @@ object GitlabPlugin extends AutoPlugin {
           .map(GitlabCredentials("Job-Token", _))
       },
       headerAuthHandler := {
-        gitlabCredentialsHandler.value.map{ creds =>
+        gitlabCredentialsHandler.value.map { creds =>
           val dispatcher = gitlabUrlHandlerDispatcher(gitlabDomain.value, creds)
           URLHandlerRegistry.setDefault(dispatcher)
         }
@@ -104,8 +108,8 @@ object GitlabPlugin extends AutoPlugin {
         .value,
       // Add in resolvers for project and group id's for domain
       gitlabResolvers := Seq(
-        gitlabProjectId.value.map(pid => projectRepo(gitlabDomain.value,pid)),
-        gitlabGroupId.value.map(gid => groupRepo(gitlabDomain.value,gid))
+        gitlabProjectId.value.map(pid => projectRepo(gitlabDomain.value, pid)),
+        gitlabGroupId.value.map(gid => groupRepo(gitlabDomain.value, gid))
       ).flatten,
       resolvers ++= gitlabResolvers.value,
       // Adds Coursier repository Authentication for each gitlabResolver
@@ -115,6 +119,8 @@ object GitlabPlugin extends AutoPlugin {
       publish := publish.dependsOn(headerAuthHandler).value,
       // If no publish location is specified then publish to the project id (if set)
       // Note: The project ID should always be set automatically with a gitlab ci pipeline via the CI_PROJECT_ID
-      publishTo := (ThisProject / publishTo).value.orElse ( gitlabProjectId.value.map(pid => projectRepo(gitlabDomain.value,pid)) )
+      publishTo := (ThisProject / publishTo).value.orElse(
+        gitlabProjectId.value.map(pid => projectRepo(gitlabDomain.value, pid))
+      )
     )
 }
