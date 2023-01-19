@@ -1,16 +1,14 @@
 package io.github.tangramflex.sbt.gitlab
 
-import lmcoursier.syntax._
-import org.apache.ivy.util.url.{
-  URLHandler,
-  URLHandlerDispatcher,
-  URLHandlerRegistry
-}
+import lmcoursier.definitions.Authentication
+import lmcoursier.CoursierConfiguration
+import org.apache.ivy.util.url.{URLHandler, URLHandlerDispatcher, URLHandlerRegistry}
+
 import sbt.Keys.*
 import sbt.*
 
 import scala.util.Try
-import lmcoursier.definitions.Authentication
+
 object GitlabPlugin extends AutoPlugin {
 
   lazy val headerAuthHandler =
@@ -61,9 +59,7 @@ object GitlabPlugin extends AutoPlugin {
           case _                  => true
         })
         .find(_.realm == "gitlab")
-        .map {
-          GitlabCredentials(_)
-        }
+        .map(GitlabCredentials.apply)
     }
   }
 
@@ -75,16 +71,11 @@ object GitlabPlugin extends AutoPlugin {
 
   private val addGitlabRepoAuth = Def.task {
     gitlabCredentialsHandler.value match {
-      case Some(creds) =>
-        gitlabResolvers.value.foldRight(csrConfiguration.value) {
-          case (repo, csr) =>
-            csr.withAuthenticationByRepositoryId(
-              Vector(
-                repo.name -> Authentication("", "")
-                  .withHeaders(Seq(creds.key -> creds.value))
-              )
-            )
-        }
+      case Some(creds) => gitlabResolvers.value.foldRight(csrConfiguration.value) {
+        case (repo, csr) => csr.withAuthenticationByRepositoryId(
+          csr.authenticationByRepositoryId :+
+          (repo.name -> Authentication("","").withHeaders(Seq(creds.key -> creds.value)))
+      )}
       case None => csrConfiguration.value
     }
   }
