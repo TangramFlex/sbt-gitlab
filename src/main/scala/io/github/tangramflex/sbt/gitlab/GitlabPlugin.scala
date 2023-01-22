@@ -2,7 +2,11 @@ package io.github.tangramflex.sbt.gitlab
 
 import lmcoursier.definitions.Authentication
 import lmcoursier.CoursierConfiguration
-import org.apache.ivy.util.url.{URLHandler, URLHandlerDispatcher, URLHandlerRegistry}
+import org.apache.ivy.util.url.{
+  URLHandler,
+  URLHandlerDispatcher,
+  URLHandlerRegistry
+}
 
 import sbt.Keys.*
 import sbt.*
@@ -71,11 +75,16 @@ object GitlabPlugin extends AutoPlugin {
 
   private val addGitlabRepoAuth = Def.task {
     gitlabCredentialsHandler.value match {
-      case Some(creds) => gitlabResolvers.value.foldRight(csrConfiguration.value) {
-        case (repo, csr) => csr.withAuthenticationByRepositoryId(
-          csr.authenticationByRepositoryId :+
-          (repo.name -> Authentication("","").withHeaders(Seq(creds.key -> creds.value)))
-      )}
+      case Some(creds) =>
+        gitlabResolvers.value.foldRight(csrConfiguration.value) {
+          case (repo, csr) =>
+            csr.withAuthenticationByRepositoryId(
+              csr.authenticationByRepositoryId :+
+                (repo.name -> Authentication("", "").withHeaders(
+                  Seq(creds.key -> creds.value)
+                ))
+            )
+        }
       case None => csrConfiguration.value
     }
   }
